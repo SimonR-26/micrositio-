@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>IA en la Sala Clínica</title>
+</head>
+<body>
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F2F6F7; --surface:#FFFFFF; --ink:#12232B; --muted:#4A5E67; --line:#D3DEE2;
+  --accent:#0B6E7A; --accent-soft:#DDF0F2; --on-accent:#FFFFFF;
+  --ben:#1C7F52; --nom:#B93128; --aut:#2459C2; --jus:#A56A0E;
+  --warn:#A56A0E; --warn-soft:#FBF1DD;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C181D; --surface:#13252C; --ink:#E5EEF1; --muted:#9BB0B9; --line:#26414B;
+  --accent:#4CC3D1; --accent-soft:#12363D; --on-accent:#08191D;
+  --ben:#4CC38A; --nom:#F0776D; --aut:#8AAEF5; --jus:#E5B65A;
+  --warn:#E5B65A; --warn-soft:#2B2410; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C181D; --surface:#13252C; --ink:#E5EEF1; --muted:#9BB0B9; --line:#26414B;
+  --accent:#4CC3D1; --accent-soft:#12363D; --on-accent:#08191D;
+  --ben:#4CC38A; --nom:#F0776D; --aut:#8AAEF5; --jus:#E5B65A;
+  --warn:#E5B65A; --warn-soft:#2B2410; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--font);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+.wrap{max-width:1020px;margin:0 auto}
+h1,h2,h3,h4{line-height:1.2;text-wrap:balance;margin:0}
+p{margin:0 0 1em;max-width:68ch}
+a{color:var(--accent)}
+.label{font:500 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+
+/* nav */
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);border-bottom:1px solid var(--line);
+  margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+nav.top .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+nav.top a{flex:none;text-decoration:none;color:var(--muted);font-size:14px;font-weight:500;padding:8px 12px;border-radius:8px;white-space:nowrap}
+nav.top a b{font:500 12px var(--mono);margin-right:6px;color:var(--accent)}
+nav.top a:hover,nav.top a.on{background:var(--accent-soft);color:var(--ink)}
+
+/* hero */
+.hero{padding-block:56px 40px;display:grid;gap:28px}
+.hero h1{font-size:clamp(34px,6.4vw,64px);font-weight:700;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .sub{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:60ch}
+.pulse{width:100%;height:auto;max-height:90px;display:block}
+.pulse path{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.pulse circle{fill:var(--bg);stroke:var(--accent);stroke-width:2.5}
+.ident{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ident>div{background:var(--surface);padding:14px 16px;min-width:0}
+.ident .label{display:block;margin-bottom:6px}
+.ident span.v{font-weight:600}
+
+/* sections */
+section{padding-block:56px 8px;border-top:1px solid var(--line)}
+.sec-head{display:flex;gap:16px;align-items:baseline;margin-bottom:24px;flex-wrap:wrap}
+.sec-head .n{font:500 14px var(--mono);color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 8px}
+.sec-head h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.01em}
+h3{font-size:20px;margin:36px 0 12px}
+h4{font-size:16px;margin-bottom:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;min-width:0}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.lead{font-size:18px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 10px 10px 0;margin:20px 0;max-width:72ch}
+.callout p:last-child{margin:0}
+
+/* dilemma statement */
+.dilemma{background:var(--ink);color:var(--bg);border-radius:14px;padding:clamp(20px,4vw,34px);margin-block:8px 28px}
+.dilemma .label{color:inherit;opacity:.7}
+.dilemma p{font-size:clamp(19px,2.6vw,25px);line-height:1.4;margin:12px 0 0;font-weight:500;max-width:60ch}
+
+/* actors */
+.actor{border-top:3px solid var(--accent)}
+.actor h4{display:flex;justify-content:space-between;gap:8px}
+.actor ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:15px}
+
+/* context list */
+.ctx{display:grid;gap:12px}
+.ctx .row{display:grid;grid-template-columns:120px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.ctx .row:last-child{border:0}
+.ctx .row p{margin:0}
+@media(max-width:560px){.ctx .row{grid-template-columns:1fr;gap:4px}}
+
+/* stats */
+.stat{display:flex;flex-direction:column;gap:6px}
+.stat .big{font:700 clamp(34px,5vw,46px)/1 var(--font);color:var(--accent);letter-spacing:-.02em}
+.stat small{color:var(--muted)}
+
+/* bars */
+.bars{display:grid;gap:14px;margin-top:10px}
+.bar .t{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:5px}
+.bar .track{height:30px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;border-radius:5px 0 0 5px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;color:var(--on-accent);font:600 13px var(--mono)}
+.axis{display:flex;justify-content:space-between;font:500 11px var(--mono);color:var(--muted);margin-top:6px}
+
+/* principles */
+.pr{border-top:4px solid var(--c)}
+.pr h4{color:var(--c);font-size:18px}
+.pr .q{font-weight:600;margin-bottom:8px}
+.pr .row{font-size:14.5px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.pr .row b{display:block;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.ben{--c:var(--ben)} .nom{--c:var(--nom)} .aut{--c:var(--aut)} .jus{--c:var(--jus)}
+.chip{display:inline-block;font:500 12px var(--mono);padding:3px 8px;border-radius:999px;color:var(--c);border:1px solid var(--c);background:color-mix(in srgb,var(--c) 10%,var(--surface))}
+
+/* tension pairs */
+.tens{display:grid;gap:12px}
+.tens .t{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.tens .pair{display:flex;gap:4px;flex-wrap:wrap;width:140px}
+@media(max-width:560px){.tens .t{grid-template-columns:1fr}.tens .pair{width:auto}}
+
+/* theory table */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px}
+th,td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th{font:500 12px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+
+/* discipline tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{font:500 14px var(--font);padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel[hidden]{display:none}
+.panel ul{padding-left:20px;margin:0 0 1em;max-width:72ch}
+.panel li{margin-bottom:8px}
+.src{font:500 12px var(--mono);color:var(--muted)}
+
+/* norms */
+.norm{display:grid;grid-template-columns:minmax(0,190px) 1fr;gap:6px 18px;padding:12px 0;border-bottom:1px solid var(--line)}
+.norm:last-child{border:0}
+.norm b{font-weight:600}
+.norm span{color:var(--muted)}
+@media(max-width:560px){.norm{grid-template-columns:1fr}}
+
+/* pending / todo */
+.todo{border:2px dashed var(--warn);background:var(--warn-soft);border-radius:12px;padding:16px 18px;margin-block:14px}
+.todo .label{color:var(--warn);display:block;margin-bottom:8px}
+.todo p{margin:0 0 6px;font-size:15px}
+.todo p:last-child{margin:0}
+.video{aspect-ratio:16/9;max-width:100%;border:2px dashed var(--warn);background:var(--warn-soft);border-radius:12px;display:grid;place-items:center;text-align:center;padding:20px}
+.video svg{width:56px;height:56px;stroke:var(--warn);fill:none;stroke-width:1.8}
+.q-slot{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start}
+.q-slot .k{font:700 14px var(--mono);color:var(--accent);padding-top:2px}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;counter-reset:s}
+.flow>div{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;counter-increment:s}
+.flow>div::before{content:counter(s);font:700 13px var(--mono);color:var(--on-accent);background:var(--accent);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;margin-bottom:10px}
+.pos{border-left:4px solid var(--c)}
+.pos h4{color:var(--c)}
+
+/* refs */
+.refs{padding:0;list-style:none;display:grid;gap:12px;max-width:80ch}
+.refs li{padding-left:2em;text-indent:-2em;overflow-wrap:anywhere}
+.cite{font-size:13px;color:var(--muted)}
+footer{padding-block:48px 64px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);margin-top:56px}
+
+/* infografia postura */
+.info{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.info-head{background:var(--ink);color:var(--bg);padding:clamp(20px,4vw,34px)}
+.info-head .label{color:inherit;opacity:.7}
+.info-head h4{font-size:clamp(22px,3.6vw,34px);margin:10px 0 8px;letter-spacing:-.01em;max-width:24ch}
+.info-head p{margin:0;opacity:.85;max-width:56ch}
+.info-body{padding:clamp(16px,3vw,28px);display:grid;gap:30px}
+.info-body h5{font:500 12px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.cond{border:1px solid var(--line);border-top:4px solid var(--c);border-radius:10px;padding:14px 16px;background:color-mix(in srgb,var(--c) 6%,var(--surface))}
+.cond b{display:block;margin:8px 0 4px}
+.cond p{margin:0;font-size:14.5px;color:var(--muted)}
+.lvls{display:grid;gap:10px}
+.lvl{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:10px}
+.lvl i{width:16px;height:16px;border-radius:50%;background:var(--c);margin-top:5px;display:block}
+.lvl b{display:block}
+.lvl span{font-size:14.5px;color:var(--muted)}
+.lvl em{font:500 11px var(--mono);font-style:normal;letter-spacing:.07em;text-transform:uppercase;color:var(--c)}
+.ok{--c:var(--ben)} .mid{--c:var(--jus)} .no{--c:var(--nom)}
+.trade .card{font-size:15px}
+.trade ul{margin:8px 0 0;padding-left:18px}
+.obj{border-left:4px solid var(--accent);padding:4px 0 4px 16px}
+.obj p{margin:0 0 8px}
+.info details{border-top:1px solid var(--line);padding:14px clamp(16px,3vw,28px)}
+.info summary{cursor:pointer;font-weight:600}
+.info details p{margin:10px 0 0}
+.vlink{display:flex;gap:16px;align-items:center;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:18px 20px;max-width:560px}
+.vlink:hover{background:var(--accent-soft)}
+.vlink svg{width:44px;height:44px;flex:none;stroke:var(--accent);fill:none;stroke-width:1.8}
+.vlink span{display:grid;gap:2px;min-width:0}
+.vlink small{color:var(--muted);font-size:14px}
+.vlink:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<nav class="top" aria-label="Secciones del micrositio">
+  <div class="wrap">
+    <a href="#s1"><b>1</b>Dilema</a>
+    <a href="#s2"><b>2</b>Análisis</a>
+    <a href="#s3"><b>3</b>Voz de la experiencia</a>
+    <a href="#s4"><b>4</b>Deliberación</a>
+    <a href="#s5"><b>5</b>Conclusiones</a>
+    <a href="#s6"><b>6</b>Referencias</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ======================= PORTADA ======================= -->
+<header class="hero" id="top">
+  <span class="label">Micrositio bioético · Ética y Axiología (ASHV03)</span>
+  <h1>Cuando el algoritmo entra a la <em>sala clínica</em></h1>
+  <p class="sub">Inteligencia artificial aplicada a la salud: ¿quién decide, quién responde y a quién beneficia cuando una máquina participa en el diagnóstico y el cuidado?</p>
+  <svg class="pulse" viewBox="0 0 800 90" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 50 H150 L175 50 L195 14 L222 78 L244 50 H330 L345 50 L360 36 L375 50 H430 L470 50"/>
+    <path d="M470 50 H520 M520 50 L560 22 M520 50 L560 78 M560 22 H640 M560 78 H640 M640 22 L680 50 M640 78 L680 50 M680 50 H800" stroke-dasharray="1 7"/>
+    <circle cx="520" cy="50" r="6"/><circle cx="560" cy="22" r="6"/><circle cx="560" cy="78" r="6"/><circle cx="640" cy="22" r="6"/><circle cx="640" cy="78" r="6"/><circle cx="680" cy="50" r="6"/>
+  </svg>
+  <div class="ident">
+    <div><span class="label">Autor(es)</span><span class="v">Simón Rojas Castaño</span></div>
+    <div><span class="label">Programa académico</span><span class="v">Ingeniería de Sistemas</span></div>
+    <div><span class="label">Institución</span><span class="v">Universidad Católica Luis Amigó</span></div>
+    <div><span class="label">Curso · Proyecto integrador</span><span class="v">Ética y Axiología · Fase 2</span></div>
+  </div>
+</header>
+
+<!-- ======================= SECCIÓN 1 ======================= -->
+<section id="s1">
+  <div class="sec-head"><span class="n">01</span><h2>Presentación del dilema</h2></div>
+
+  <div class="dilemma">
+    <span class="label">El dilema</span>
+    <p>¿Es éticamente aceptable que un sistema de inteligencia artificial —más preciso en promedio pero opaco y potencialmente sesgado— participe en decisiones clínicas que afectan la vida de las personas?</p>
+  </div>
+
+  <h3>Contextualización</h3>
+  <p class="lead">Los sistemas de IA ya leen mamografías, priorizan pacientes en urgencias, predicen riesgos y asignan recursos de atención. En algunos estudios mejoran la detección y alivian la carga del personal; en otros, reproducen desigualdades que nadie programó de forma explícita.</p>
+  <p>El dilema aparece porque el beneficio es real y el riesgo también: el mismo algoritmo que puede detectar un cáncer a tiempo puede dejar por fuera a quienes los datos de entrenamiento no representaron bien, y quien recibe el diagnóstico rara vez sabe cómo se llegó a él.</p>
+
+  <h3>Descripción del problema</h3>
+  <div class="grid g3">
+    <div class="card"><h4>Opacidad</h4><p class="cite" style="margin:0">Muchos modelos funcionan como «cajas negras»: el profesional y el paciente no pueden reconstruir por qué se recomendó una conducta.</p></div>
+    <div class="card"><h4>Sesgo</h4><p class="cite" style="margin:0">Si los datos reflejan desigualdades históricas, el modelo las aprende y las escala sin que nadie lo decida.</p></div>
+    <div class="card"><h4>Responsabilidad difusa</h4><p class="cite" style="margin:0">Cuando algo falla, la culpa se reparte entre desarrollador, institución y clínico, y a veces no recae en nadie.</p></div>
+  </div>
+
+  <h3>Actores involucrados</h3>
+  <div class="grid g4">
+    <div class="card actor"><h4>Pacientes</h4><ul><li>Vida, salud, intimidad</li><li>Derecho a entender y a decidir</li></ul></div>
+    <div class="card actor"><h4>Profesionales de la salud</h4><ul><li>Juicio clínico y autonomía profesional</li><li>Riesgo de dependencia del sistema</li></ul></div>
+    <div class="card actor"><h4>Ingenieros y desarrolladores</h4><ul><li>Diseño, datos de entrenamiento, pruebas</li><li>Responsabilidad por lo que construyen</li></ul></div>
+    <div class="card actor"><h4>Instituciones y aseguradoras</h4><ul><li>Eficiencia y costos</li><li>Deber de garantizar calidad y equidad</li></ul></div>
+    <div class="card actor"><h4>Estado y reguladores</h4><ul><li>Proteger derechos y datos</li><li>Regular sin frenar la innovación</li></ul></div>
+    <div class="card actor"><h4>Sociedad y comunidades</h4><ul><li>Acceso desigual, brecha digital</li><li>Confianza pública en el sistema de salud</li></ul></div>
+  </div>
+
+  <h3>Contexto social, científico, tecnológico y jurídico</h3>
+  <div class="card ctx">
+    <div class="row"><span class="label">Científico</span><p>Ensayos clínicos recientes muestran que la IA puede aumentar la detección de cáncer de mama sin sobrecargar a los radiólogos; otros trabajos advierten sobre sesgos y falta de validación en poblaciones distintas a las de entrenamiento.</p></div>
+    <div class="row"><span class="label">Tecnológico</span><p>Aprendizaje automático sobre imágenes e historias clínicas electrónicas; modelos de lenguaje que redactan notas o responden consultas. Crece la preocupación por la explicabilidad y la dependencia del profesional («sesgo de automatización»).</p></div>
+    <div class="row"><span class="label">Social</span><p>En Colombia conviven instituciones muy tecnificadas y territorios con baja conectividad y pocos especialistas: la IA puede acercar la atención o ampliar la brecha.</p></div>
+    <div class="row"><span class="label">Jurídico</span><p>Colombia protege los datos personales (Ley 1581 de 2012), reconoce la salud como derecho fundamental (Ley 1751 de 2015) e impulsa la historia clínica electrónica interoperable (Ley 2015 de 2020). La política nacional de IA (CONPES 4144 de 2025) orienta el uso, pero aún no existe una ley específica sobre IA en salud.</p></div>
+  </div>
+
+  <h3>¿Por qué importa?</h3>
+  <p>Porque las decisiones sobre quién recibe atención, con qué prioridad y con qué explicación son decisiones sobre dignidad humana. Para un futuro ingeniero de sistemas, además, el dilema es personal: quien diseña el modelo participa en la decisión clínica, aunque nunca vea al paciente.</p>
+  <div class="callout"><p><strong>Mirar al ser y no al hecho.</strong> Desde el humanismo amigoniano, el paciente no es un caso ni un dato: es una persona. Esa mirada es el criterio con el que se leerá cada argumento de este micrositio.</p></div>
+</section>
+
+<!-- ======================= SECCIÓN 2 ======================= -->
+<section id="s2">
+  <div class="sec-head"><span class="n">02</span><h2>Análisis interdisciplinario</h2></div>
+
+  <h3 style="margin-top:0">A · Perspectiva ética</h3>
+
+  <h4 style="margin-top:20px">Valores en conflicto</h4>
+  <div class="grid g2">
+    <div class="card"><p style="margin:0"><strong>Vida y salud</strong> frente a <strong>transparencia</strong>: un modelo muy certero pero inexplicable, ¿vale más que uno algo menos preciso pero comprensible?</p></div>
+    <div class="card"><p style="margin:0"><strong>Eficiencia</strong> frente a <strong>equidad</strong>: automatizar ahorra recursos, pero puede dejar atrás a quienes los datos no representan.</p></div>
+    <div class="card"><p style="margin:0"><strong>Innovación</strong> frente a <strong>precaución</strong>: esperar cuesta vidas que se pudieron salvar; adelantarse cuesta daños que se pudieron evitar.</p></div>
+    <div class="card"><p style="margin:0"><strong>Intimidad</strong> frente a <strong>bien común</strong>: mejores modelos requieren más datos de salud, que son de las personas.</p></div>
+  </div>
+
+  <h4 style="margin-top:28px">Los cuatro principios de la bioética aplicados al caso</h4>
+  <div class="grid g2">
+    <div class="card pr ben"><h4>Beneficencia</h4><p class="q">¿Mejora la IA el bien del paciente?</p>
+      <div class="row"><b>A favor</b>Mayor detección temprana, menor carga laboral, apoyo donde faltan especialistas.</div>
+      <div class="row"><b>En riesgo</b>El beneficio promedio puede ocultar que algunos grupos no se benefician.</div></div>
+    <div class="card pr nom"><h4>No maleficencia</h4><p class="q">¿Evita causar daño?</p>
+      <div class="row"><b>A favor</b>Una segunda lectura automática puede reducir errores humanos.</div>
+      <div class="row"><b>En riesgo</b>Falsos positivos y negativos, sesgo de automatización, pérdida de habilidades clínicas.</div></div>
+    <div class="card pr aut"><h4>Autonomía</h4><p class="q">¿Puede la persona entender y decidir?</p>
+      <div class="row"><b>A favor</b>Más información y herramientas para decidir mejor.</div>
+      <div class="row"><b>En riesgo</b>Consentimiento poco informado sobre el uso de la IA y de los datos; decisiones que el paciente no puede cuestionar.</div></div>
+    <div class="card pr jus"><h4>Justicia</h4><p class="q">¿Se distribuyen equitativamente beneficios y riesgos?</p>
+      <div class="row"><b>A favor</b>Puede llevar diagnóstico a zonas con pocos especialistas.</div>
+      <div class="row"><b>En riesgo</b>Sesgo algorítmico, brecha digital, tecnología accesible solo para quien puede pagarla.</div></div>
+  </div>
+
+  <h4 style="margin-top:28px">Evidencia que ilustra la tensión</h4>
+  <div class="grid g2">
+    <div class="card">
+      <span class="chip jus" style="--c:var(--jus)">Justicia · sesgo</span>
+      <p style="margin:12px 0 4px"><strong>Un algoritmo usado para asignar programas de atención en EE. UU. subestimaba la necesidad de los pacientes negros.</strong></p>
+      <p class="cite">Porcentaje de pacientes negros entre quienes recibirían atención adicional</p>
+      <div class="bars" role="img" aria-label="Con el algoritmo actual 17,7 por ciento; sin sesgo habría sido 46,5 por ciento">
+        <div class="bar"><div class="t"><span>Con el algoritmo</span></div><div class="track"><div class="fill" style="width:35.4%;background:var(--nom)">17,7 %</div></div></div>
+        <div class="bar"><div class="t"><span>Sin sesgo</span></div><div class="track"><div class="fill" style="width:93%;background:var(--ben)">46,5 %</div></div></div>
+      </div>
+      <div class="axis"><span>0 %</span><span>25 %</span><span>50 %</span></div>
+      <p class="cite" style="margin-top:12px">El modelo usaba el gasto en salud como sustituto de la necesidad; como históricamente se gasta menos en esta población, el sistema la juzgó «menos enferma». Fuente: Obermeyer et al. (2019). Datos de EE. UU.: no son una medición para Colombia.</p>
+    </div>
+    <div class="card">
+      <span class="chip ben" style="--c:var(--ben)">Beneficencia · detección</span>
+      <p style="margin:12px 0 14px"><strong>En el ensayo sueco MASAI, la mamografía asistida por IA detectó más cánceres y redujo la carga de lectura.</strong></p>
+      <div class="grid g2" style="gap:12px">
+        <div class="stat"><span class="big">+29 %</span><small>más cánceres detectados (80 033 mujeres)</small></div>
+        <div class="stat"><span class="big">−44 %</span><small>de la carga de lectura de los radiólogos</small></div>
+      </div>
+      <p class="cite" style="margin-top:14px">Fuente: Hernström et al. (2025); resultados intermedios en Lång et al. (2023). Es un solo país con tecnología y protocolos específicos: la generalización requiere validación local.</p>
+    </div>
+  </div>
+  <div class="callout"><p><strong>Lectura conjunta:</strong> la misma tecnología puede ser el mejor argumento a favor y el mejor argumento en contra. Lo que cambia es cómo se diseña, con qué datos, bajo qué supervisión y para quién.</p></div>
+
+  <h4 style="margin-top:28px">Teorías éticas relacionadas</h4>
+  <div class="tbl"><table>
+    <thead><tr><th>Teoría</th><th>Qué pregunta hace</th><th>Postura frente a la IA clínica</th><th>Límite</th></tr></thead>
+    <tbody>
+      <tr><td>Utilitarismo<br><span class="src">Mill</span></td><td>¿Qué produce el mayor bienestar para el mayor número?</td><td>Favorece la IA si aumenta el número de vidas salvadas y la eficiencia del sistema.</td><td>Puede aceptar el sacrificio de minorías mal representadas en los datos.</td></tr>
+      <tr><td>Deontología<br><span class="src">Kant</span></td><td>¿Se trata a la persona siempre como fin y nunca solo como medio?</td><td>Exige consentimiento, dignidad y que nadie sea reducido a un dato o a una probabilidad.</td><td>Ofrece poca guía cuando los deberes chocan o cuando hay que repartir recursos limitados.</td></tr>
+      <tr><td>Ética de la virtud<br><span class="src">Aristóteles</span></td><td>¿Qué haría un profesional prudente y compasivo?</td><td>Pide que la IA apoye, pero no reemplace, el juicio y el cuidado del profesional.</td><td>No dice con precisión qué regla aplicar a un algoritmo concreto.</td></tr>
+      <tr><td>Ética del cuidado y humanismo amigoniano</td><td>¿Cómo se acompaña a esta persona concreta?</td><td>Mira al ser y no al hecho: la tecnología se juzga por cómo cuida a quien sufre.</td><td>Es menos operativa para decidir políticas a gran escala.</td></tr>
+    </tbody></table></div>
+
+  <h4 style="margin-top:28px">Tensiones morales</h4>
+  <div class="card tens">
+    <div class="t"><div class="pair"><span class="chip ben" style="--c:var(--ben)">Beneficencia</span><span class="chip aut" style="--c:var(--aut)">Autonomía</span></div><p style="margin:0">Hacer «lo mejor» para el paciente con un sistema que él no entiende ni puede cuestionar.</p></div>
+    <div class="t"><div class="pair"><span class="chip ben" style="--c:var(--ben)">Beneficencia</span><span class="chip jus" style="--c:var(--jus)">Justicia</span></div><p style="margin:0">Un beneficio promedio alto que no llega a todos por igual.</p></div>
+    <div class="t"><div class="pair"><span class="chip nom" style="--c:var(--nom)">No maleficencia</span><span class="chip ben" style="--c:var(--ben)">Beneficencia</span></div><p style="margin:0">No usar la IA tiene un costo; usarla sin garantías también.</p></div>
+    <div class="t"><div class="pair"><span class="chip aut" style="--c:var(--aut)">Autonomía</span><span class="chip jus" style="--c:var(--jus)">Justicia</span></div><p style="margin:0">Pedir datos a todos para mejorar el modelo vs. el derecho individual a la intimidad.</p></div>
+  </div>
+
+  <h3>B · Perspectiva disciplinar</h3>
+  <div class="tabs" role="tablist" aria-label="Disciplinas">
+    <button role="tab" aria-selected="true" aria-controls="p-ing" id="t-ing">Ingeniería de sistemas</button>
+    <button role="tab" aria-selected="false" aria-controls="p-med" id="t-med">Medicina</button>
+    <button role="tab" aria-selected="false" aria-controls="p-der" id="t-der">Derecho</button>
+  </div>
+  <div class="card">
+    <div class="panel" role="tabpanel" id="p-ing" aria-labelledby="t-ing">
+      <ul>
+        <li><strong>Datos y sesgo.</strong> Elegir qué variable predice el modelo es una decisión ética: usar el costo como sustituto de la necesidad produjo el sesgo del caso Obermeyer.</li>
+        <li><strong>Explicabilidad.</strong> Las técnicas actuales para «explicar» modelos de caja negra tienen límites y pueden dar una falsa sensación de comprensión en la clínica (Ghassemi et al., 2021).</li>
+        <li><strong>Diseño con supervisión humana.</strong> Registrar decisiones, medir el rendimiento por subgrupos y permitir que el clínico discrepe son requisitos de ingeniería, no solo de ética.</li>
+        <li><strong>Gobernanza.</strong> La OMS (2021) propone seis principios: proteger la autonomía; promover el bienestar, la seguridad y el interés público; garantizar transparencia y explicabilidad; fomentar la responsabilidad; asegurar inclusión y equidad; y promover una IA sensible y sostenible.</li>
+      </ul>
+    </div>
+    <div class="panel" role="tabpanel" id="p-med" aria-labelledby="t-med" hidden>
+      <ul>
+        <li><strong>Evidencia clínica.</strong> El rendimiento en el laboratorio no garantiza beneficio en la práctica: se requieren ensayos prospectivos como MASAI (Lång et al., 2023; Hernström et al., 2025).</li>
+        <li><strong>Sesgo de automatización.</strong> Los profesionales pueden aceptar recomendaciones erróneas del sistema aun contra su propio criterio (Goddard et al., 2012).</li>
+        <li><strong>Pérdida de habilidades.</strong> La dependencia prolongada puede debilitar el razonamiento clínico, lo que importa si el sistema falla o no está disponible.</li>
+        <li><strong>Relación clínica.</strong> El tiempo que la IA libera solo es un beneficio si se dedica a escuchar y acompañar al paciente.</li>
+      </ul>
+    </div>
+    <div class="panel" role="tabpanel" id="p-der" aria-labelledby="t-der" hidden>
+      <div class="norm"><b>Ley 1751 de 2015</b><span>Ley Estatutaria de Salud: la salud es un derecho fundamental autónomo; exige calidad, equidad y respeto a la dignidad.</span></div>
+      <div class="norm"><b>Ley 1581 de 2012</b><span>Régimen general de protección de datos personales; los datos de salud son sensibles y exigen autorización informada.</span></div>
+      <div class="norm"><b>Ley 2015 de 2020</b><span>Historia clínica electrónica interoperable: fuente de datos clave para sistemas de IA y objeto de deberes de seguridad.</span></div>
+      <div class="norm"><b>Resolución 866 de 2021</b><span>Ministerio de Salud: datos que deben compartirse e interoperarse desde la historia clínica.</span></div>
+      <div class="norm"><b>CONPES 3975 de 2019 y 4144 de 2025</b><span>Políticas nacionales de transformación digital e inteligencia artificial: marcos orientadores, no reglas específicas para IA clínica.</span></div>
+      <p class="cite" style="margin-top:12px">Vacío a destacar: Colombia no tiene aún una norma específica que fije quién responde por un daño causado con apoyo de IA en salud.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SECCIÓN 3 ======================= -->
+<section id="s3">
+  <div class="sec-head"><span class="n">03</span><h2>La voz de la experiencia</h2></div>
+  <p class="lead">La teoría muestra el dilema; la práctica profesional muestra cómo se decide cuando no hay respuesta perfecta.</p>
+
+  <div class="grid g2">
+    <div class="card"><span class="label">Entrevistada</span>
+      <h4 style="margin-top:10px;font-size:20px">Durley López Alzate</h4>
+      <p class="cite" style="margin:6px 0 0">Ingeniera de sistemas con más de 20 años de experiencia, especialista en proyectos y magíster en inteligencia artificial. Gerente de proyectos de software desde hace 14 años. En su trabajo usa sistemas expertos, redes neuronales y IA generativa. Su proyecto de grado fue un sistema experto para el diagnóstico de enfermedades del sistema respiratorio, que después evolucionó a una IA y hoy se usa en una institución educativa y en un hospital.</p></div>
+    <div class="card"><span class="label">Por qué la elegí</span>
+      <p style="margin:10px 0 0;font-size:15px">Mi dilema trata de IA en decisiones clínicas, y ella ha estado de los dos lados: diseñó un sistema de diagnóstico que llegó a un hospital y trabaja a diario con sistemas de IA en proyectos de software. Es una voz de la ingeniería de sistemas, mi propia disciplina, con experiencia directa en cómo se construye un sistema de este tipo. Es la perspectiva de quien diseña, que complementa la de los médicos y los pacientes.</p></div>
+  </div>
+
+  <h3>Video de la entrevista (3 a 5 minutos)</h3>
+  <a class="vlink" href="https://drive.google.com/file/d/1TmlwoXaXe3Cvba_L47qr-YCgVOAZycl9/view?usp=sharing" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+    <span><strong>Ver la entrevista</strong><small>Videollamada con Durley López Alzate · se abre en Google Drive</small></span>
+  </a>
+  <p class="cite" style="margin-top:10px">El video se abre en una pestaña nueva porque esta página no puede reproducir videos de Drive directamente.</p>
+
+  <h3>Preguntas más significativas</h3>
+  <div class="grid">
+    <div class="card q-slot"><span class="k">P1</span><p style="margin:0">En tu práctica, ¿cómo y para qué se usa la inteligencia artificial hoy y qué beneficios has visto de verdad?</p></div>
+    <div class="card q-slot"><span class="k">P2</span><p style="margin:0">Si tuvieras que dar una condición indispensable para usar IA en salud de forma ética, ¿cuál sería?</p></div>
+  </div>
+
+  <h3>Principales aportes</h3>
+  <div class="grid g3">
+    <div class="card"><h4>La IA ya es una herramienta cotidiana</h4><p class="cite" style="margin:0">Según su experiencia, la IA está presente en casi todos los sistemas automatizados y desarrollos de software de las empresas donde ha trabajado desde hace unos 15 años, ya sea con sistemas expertos, redes neuronales o IA generativa. Le ha servido para analizar riesgos, medir proyectos (KPI y OKR), acelerar ceremonias ágiles, estimar costos y tiempos, y diseñar rutas de aprendizaje para el equipo.</p></div>
+    <div class="card"><h4>Un sistema de salud creado por una ingeniera</h4><p class="cite" style="margin:0">Su proyecto de grado fue un sistema experto de diagnóstico de enfermedades respiratorias que luego se volvió una IA y hoy se usa en una institución educativa y en un hospital. Muestra que estas herramientas pasan del salón de clases a la práctica clínica real, y que quienes las diseñan son ingenieros.</p></div>
+    <div class="card"><h4>El valor de aprender y rotar al equipo</h4><p class="cite" style="margin:0">Destacó que la IA ayudó a que los desarrolladores crezcan dentro de las empresas, con evaluaciones y rutas de aprendizaje. Esto conecta con mi tema: la tecnología puede ampliar las capacidades de las personas en lugar de reemplazarlas.</p></div>
+  </div>
+  <div class="callout"><p><strong>Cómo se conecta con el dilema.</strong> Su recorrido, de un sistema experto a una IA usada en un hospital, ilustra que estas herramientas llegan a la práctica clínica desde la ingeniería. Eso refuerza una idea de mi postura: las decisiones de diseño son decisiones éticas, y los principios de justicia, autonomía y no maleficencia deben pensarse desde el diseño y no después. El sesgo y la responsabilidad ante un error no se desarrollaron en la entrevista; quedan como preguntas abiertas que se abordan con las fuentes de la sección 2.</p></div>
+</section>
+
+<!-- ======================= SECCIÓN 4 ======================= -->
+<section id="s4">
+  <div class="sec-head"><span class="n">04</span><h2>Deliberación ética</h2></div>
+
+  <h3 style="margin-top:0">Ruta de la deliberación</h3>
+  <div class="flow">
+    <div><h4>Hechos</h4><p class="cite" style="margin:0">Qué sistema, qué datos, qué evidencia y qué riesgos concretos.</p></div>
+    <div><h4>Conflictos</h4><p class="cite" style="margin:0">Qué valores y principios chocan, y entre quiénes.</p></div>
+    <div><h4>Posiciones</h4><p class="cite" style="margin:0">Qué defienden las posturas razonables y con qué argumentos.</p></div>
+    <div><h4>Decisión</h4><p class="cite" style="margin:0">Qué postura se sostiene, bajo qué condiciones y qué se renuncia.</p></div>
+  </div>
+
+  <h3>Principales conflictos éticos</h3>
+  <ul style="max-width:72ch;padding-left:20px">
+    <li>Explicabilidad frente a rendimiento: ¿se acepta un modelo opaco si salva más vidas?</li>
+    <li>Responsabilidad: ¿quién responde si el sistema se equivoca y el clínico lo siguió?</li>
+    <li>Consentimiento: ¿debe informarse al paciente cuándo una IA participó en su atención?</li>
+    <li>Equidad: ¿qué obligación hay de validar el modelo en poblaciones locales antes de usarlo?</li>
+  </ul>
+
+  <h3>Posiciones existentes</h3>
+  <div class="grid g3">
+    <div class="card pos ben"><h4>Adopción decidida</h4><p class="cite" style="margin:0">Si la evidencia muestra más beneficio que daño, no usarla es injusto con quienes se pudieron beneficiar. Prioriza beneficencia y utilidad.</p></div>
+    <div class="card pos aut"><h4>Adopción con supervisión</h4><p class="cite" style="margin:0">Usarla como apoyo, con decisión humana final, auditoría por subgrupos, información al paciente y responsabilidad definida. Equilibra los cuatro principios.</p></div>
+    <div class="card pos nom"><h4>Moratoria o restricción</h4><p class="cite" style="margin:0">Sin explicabilidad, validación local y marco legal, el riesgo no es aceptable. Prioriza no maleficencia y justicia.</p></div>
+  </div>
+
+  <h3>Relaciones entre los principios</h3>
+  <p>Ninguno de los cuatro principios es absoluto: cada uno limita a los otros. La pregunta de fondo es cuál debe ceder, en qué medida y con qué justificación, cuando no pueden cumplirse todos a la vez (Beauchamp y Childress, 2019).</p>
+
+  <h3>Mi postura argumentada</h3>
+  <div class="info">
+    <div class="info-head">
+      <span class="label">Infografía · mi postura</span>
+      <h4>Sí a la IA en salud, pero como apoyo que se audita, no como juez</h4>
+      <p>La IA puede salvar vidas y también reproducir injusticias. Mi postura: usarla solo bajo condiciones que protejan a la persona, y renunciar a la velocidad cuando no se cumplan.</p>
+    </div>
+    <div class="info-body">
+      <div>
+        <h5>Cuatro condiciones mínimas</h5>
+        <div class="grid g4">
+          <div class="cond nom" style="--c:var(--nom)"><span class="chip" style="--c:var(--nom)">No maleficencia</span><b>La decisión final es humana</b><p>El clínico puede discrepar, y el sistema registra cuándo lo hace.</p></div>
+          <div class="cond jus" style="--c:var(--jus)"><span class="chip" style="--c:var(--jus)">Justicia</span><b>Validar en población local</b><p>Medir el rendimiento por subgrupos antes de usarlo, no solo en promedio.</p></div>
+          <div class="cond aut" style="--c:var(--aut)"><span class="chip" style="--c:var(--aut)">Autonomía</span><b>El paciente sabe y consiente</b><p>Se le informa cuándo participa una IA y cómo se usan sus datos.</p></div>
+          <div class="cond ben" style="--c:var(--ben)"><span class="chip" style="--c:var(--ben)">Beneficencia</span><b>Responsables claros</b><p>Hay un responsable definido y trazabilidad, para que el beneficio no oculte los daños.</p></div>
+        </div>
+      </div>
+      <div>
+        <h5>Cuánta autoridad le doy a la IA</h5>
+        <div class="lvls">
+          <div class="lvl ok"><i></i><div><em>Sí</em><b>Segunda lectura de apoyo</b><span>Por ejemplo, una IA que revisa mamografías y alerta, con revisión del radiólogo. Es el caso mejor respaldado por la evidencia.</span></div></div>
+          <div class="lvl mid"><i></i><div><em>Con auditoría</em><b>Priorización y triage</b><span>Se acepta si se audita por grupos y se puede corregir. El caso Obermeyer muestra qué pasa si no.</span></div></div>
+          <div class="lvl no"><i></i><div><em>No</em><b>Decisión final automática</b><span>Negar o asignar atención sin supervisión humana ni explicación al paciente.</span></div></div>
+        </div>
+      </div>
+      <div class="grid g2 trade">
+        <div class="card"><h5>Lo que gano</h5><ul><li>Detección más temprana y menos carga para el personal.</li><li>Confianza del paciente y del profesional.</li><li>Un marco que corrige los sesgos a tiempo.</li></ul></div>
+        <div class="card"><h5>Lo que acepto perder</h5><ul><li>Velocidad: adoptar más lento.</li><li>Costos de auditoría y de validación local.</li><li>Parte del rendimiento, si hace falta explicabilidad.</li></ul></div>
+      </div>
+      <div>
+        <h5>La mejor objeción y mi respuesta</h5>
+        <div class="obj"><p><strong>Objeción:</strong> exigir tantas condiciones retrasa un beneficio real y cada demora cuesta vidas (utilitarismo).</p><p><strong>Respuesta:</strong> la condición no es esperar a que sea perfecta, sino adoptarla por etapas, empezando por los usos de menor riesgo, con monitoreo continuo. Así se aprovecha el beneficio sin apostar los derechos de quienes los datos no representaron.</p></div>
+      </div>
+      <div class="callout" style="margin:0"><p><strong>Relación entre principios:</strong> la beneficencia es la razón para usar la IA; la no maleficencia y la justicia son sus límites; la autonomía es el método con el que se respeta a la persona.</p></div>
+    </div>
+    <details>
+      <summary>Texto para narrar la infografía (unos 3 minutos)</summary>
+      <p><strong>1 · Postura.</strong> Mi postura es que la inteligencia artificial sí debe usarse en salud, pero como apoyo que se audita y no como un juez que decide solo. Hay evidencia de que puede detectar más cánceres y aliviar la carga del personal, pero también de que puede reproducir injusticias sin que nadie lo programe.</p>
+      <p><strong>2 · Condiciones.</strong> Pongo cuatro condiciones. Primera, no maleficencia: la decisión final es de una persona que puede discrepar. Segunda, justicia: validar el sistema en la población local y por grupos, no solo en promedio. Tercera, autonomía: el paciente debe saber cuándo participa una IA y cómo se usan sus datos. Cuarta, responsabilidad clara, para que el beneficio no oculte los daños.</p>
+      <p><strong>3 · Autoridad.</strong> Por eso distingo tres niveles. Como segunda lectura de apoyo, sí. En priorización y triage, con auditoría. Y como decisión final automática, no.</p>
+      <p><strong>4 · Costos.</strong> Reconozco lo que cuesta: adoptar más lento y gastar en auditoría y validación. Lo que gano es confianza y poder corregir los sesgos a tiempo.</p>
+      <p><strong>5 · Objeción.</strong> Alguien dirá que tantas condiciones retrasan un beneficio que salva vidas. Respondo que no se trata de esperar a la perfección, sino de adoptarla por etapas y con monitoreo. Así la beneficencia es la razón, la no maleficencia y la justicia son los límites, y la autonomía es la forma de respetar a la persona.</p>
+    </details>
+  </div>
+</section>
+
+<!-- ======================= SECCIÓN 5 ======================= -->
+<section id="s5">
+  <div class="sec-head"><span class="n">05</span><h2>Conclusiones</h2></div>
+  <div class="grid g3">
+    <div class="card"><span class="label">Qué aprendí</span>
+      <p style="margin:12px 0 0">La pregunta no es si la IA debe entrar a la salud, sino bajo qué condiciones. La evidencia muestra beneficios reales (más detección y menos carga de lectura en MASAI) y daños reales (un algoritmo que subestimó la necesidad de pacientes negros en el caso Obermeyer). También aprendí que los cuatro principios no se aplican como una lista: se pesan entre sí, y que muchas decisiones éticas ocurren en el diseño técnico, cuando se elige qué dato usar y qué medir, mucho antes de que el sistema llegue al hospital.</p></div>
+    <div class="card"><span class="label">Cómo cambió mi comprensión</span>
+      <p style="margin:12px 0 0">Al comienzo veía este dilema como un problema de precisión: si el sistema acierta más, es mejor. Después de investigar y de conversar con Durley López Alzate, entendí que precisión no es lo mismo que justicia ni que respeto por la autonomía: un modelo puede acertar en promedio y fallarle a un grupo, o acertar sin que nadie pueda explicarlo ni responder por él. Mi pregunta pasó de «¿funciona?» a «¿para quién, con qué límites y quién responde?».</p></div>
+    <div class="card"><span class="label">Importancia de deliberar</span>
+      <p style="margin:12px 0 0">Como futuro ingeniero, mis decisiones de diseño son decisiones éticas aunque nunca conozca al paciente. Como ciudadano, puedo exigir transparencia, consentimiento y rendición de cuentas. La deliberación bioética no entrega una respuesta única, pero evita decidir por inercia o por eficiencia y obliga a mirar al ser y no al hecho: detrás de cada dato hay una persona.</p></div>
+  </div>
+  <div class="callout"><p>Idea guía: la tecnología no es neutral porque quienes la diseñan toman decisiones sobre datos, objetivos y límites; por eso la ética no se agrega al final, se diseña desde el principio.</p></div>
+</section>
+
+<!-- ======================= SECCIÓN 6 ======================= -->
+<section id="s6">
+  <div class="sec-head"><span class="n">06</span><h2>Referencias</h2></div>
+  <p class="cite">Formato APA 7.ª edición.</p>
+  <ol class="refs" style="padding:0;margin:0;list-style:none">
+    <li>Aristóteles. (2001). <em>Ética a Nicómaco</em> (J. Pallí Bonet, Trad.). Gredos.</li>
+    <li>Beauchamp, T. L., y Childress, J. F. (2019). <em>Principles of biomedical ethics</em> (8.ª ed.). Oxford University Press.</li>
+    <li>Congreso de Colombia. (2012). <em>Ley 1581 de 2012: Por la cual se dictan disposiciones generales para la protección de datos personales</em>. Diario Oficial n.º 48.587.</li>
+    <li>Congreso de Colombia. (2015). <em>Ley 1751 de 2015: Por medio de la cual se regula el derecho fundamental a la salud</em>. Diario Oficial n.º 49.427.</li>
+    <li>Congreso de Colombia. (2020). <em>Ley 2015 de 2020: Por medio de la cual se crea la historia clínica electrónica interoperable</em>. Diario Oficial n.º 51.206.</li>
+    <li>Consejo Nacional de Política Económica y Social. (2019). <em>Documento CONPES 3975: Política nacional para la transformación digital e inteligencia artificial</em>. Departamento Nacional de Planeación.</li>
+    <li>Consejo Nacional de Política Económica y Social. (2025). <em>Documento CONPES 4144: Política nacional de inteligencia artificial</em>. Departamento Nacional de Planeación.</li>
+    <li>Ghassemi, M., Oakden-Rayner, L., y Beam, A. L. (2021). The false hope of current approaches to explainable artificial intelligence in health care. <em>The Lancet Digital Health, 3</em>(11), e745–e750. https://doi.org/10.1016/S2589-7500(21)00208-9</li>
+    <li>Goddard, K., Roudsari, A., y Wyatt, J. C. (2012). Automation bias: A systematic review of frequency, effect mediators, and mitigators. <em>Journal of the American Medical Informatics Association, 19</em>(1), 121–127. https://doi.org/10.1136/amiajnl-2011-000089</li>
+    <li>Hernström, V., Josefsson, V., Sartor, H., Schmidt, D., Larsson, A.-M., Hofvind, S., Andersson, I., Rosso, A., Hagberg, O., y Lång, K. (2025). Screening performance and characteristics of breast cancer detected in the Mammography Screening with Artificial Intelligence trial (MASAI). <em>The Lancet Digital Health, 7</em>(3), e175–e183. https://doi.org/10.1016/S2589-7500(24)00267-X</li>
+    <li>Kant, I. (2012). <em>Fundamentación de la metafísica de las costumbres</em>. Alianza. (Obra original publicada en 1785)</li>
+    <li>Lång, K., Josefsson, V., Larsson, A.-M., Larsson, S., Högberg, C., Sartor, H., Hofvind, S., Andersson, I., y Rosso, A. (2023). Artificial intelligence-supported screen reading versus standard double reading in the Mammography Screening with Artificial Intelligence trial (MASAI). <em>The Lancet Oncology, 24</em>(8), 936–944. https://doi.org/10.1016/S1470-2045(23)00298-X</li>
+    <li>López Alzate, D. (2026, 26 de octubre). <em>Entrevista sobre inteligencia artificial en la salud</em> [Entrevista personal en video]. Entrevistador: S. Rojas Castaño. https://drive.google.com/file/d/1TmlwoXaXe3Cvba_L47qr-YCgVOAZycl9/view?usp=sharing</li>
+    <li>Mill, J. S. (2014). <em>El utilitarismo</em>. Alianza. (Obra original publicada en 1863)</li>
+    <li>Ministerio de Salud y Protección Social. (2021). <em>Resolución 866 de 2021: Por la cual se reglamenta el conjunto de elementos de datos clínicos relevantes para la atención en salud</em>.</li>
+    <li>Obermeyer, Z., Powers, B., Vogeli, C., y Mullainathan, S. (2019). Dissecting racial bias in an algorithm used to manage the health of populations. <em>Science, 366</em>(6464), 447–453. https://doi.org/10.1126/science.aax2342</li>
+    <li>Organización Mundial de la Salud. (2021). <em>Ethics and governance of artificial intelligence for health: WHO guidance</em>. https://www.who.int/publications/i/item/9789240029200</li>
+    <li>Potter, V. R. (1971). <em>Bioethics: Bridge to the future</em>. Prentice-Hall.</li>
+  </ol>
+</section>
+
+<footer>
+  Micrositio bioético · Ética y Axiología (ASHV03) · Universidad Católica Luis Amigó · Tierras de Amigónia.
+</footer>
+</main>
+
+<script>
+(function(){
+  var tabs=document.querySelectorAll('.tabs [role=tab]');
+  function show(t){
+    tabs.forEach(function(b){
+      var on=b===t;
+      b.setAttribute('aria-selected',on);
+      document.getElementById(b.getAttribute('aria-controls')).hidden=!on;
+    });
+  }
+  tabs.forEach(function(b){b.addEventListener('click',function(){show(b)});});
+  var links=document.querySelectorAll('nav.top a');
+  var secs=Array.prototype.map.call(links,function(a){return document.querySelector(a.getAttribute('href'))});
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id)});
+        }
+      });
+    },{rootMargin:'-30% 0px -60% 0px'});
+    secs.forEach(function(s){if(s)io.observe(s)});
+  }
+})();
+</script>
+
+</body>
+</html>
